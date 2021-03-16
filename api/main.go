@@ -15,7 +15,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var myRouter = mux.NewRouter().StrictSlash(true)
+var MyRouter = mux.NewRouter().StrictSlash(true)
 var wait time.Duration
 var server *http.Server
 
@@ -59,7 +59,7 @@ func CreateServer() {
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      myRouter,
+		Handler:      MyRouter,
 	}
 }
 
@@ -82,40 +82,47 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["id"]
-
+	var notFound bool
+	notFound = true
 	// Loop over all of our Articles
 	// if the article.Id equals the key we pass in
 	// return the article encoded as JSON
 	for _, article := range Articles {
 		if article.Id == key {
 			err := json.NewEncoder(w).Encode(article)
-
+			notFound = false
+			return
 			if err != nil {
 				log.Println(err)
 				return
 			}
 		}
 	}
+
+	if notFound == true {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	fmt.Println("Return single article Endpoint hit!")
 }
 
 func returnAllArticles(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-	username, password, ok := r.BasicAuth()
-
-	if !ok {
-		w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"message": "No basic auth present"}`))
-		return
-	}
-
-	if !isAuthorised(username, password) {
-		w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"message": "Invalid username or password"}`))
-		return
-	}
+	//w.Header().Add("Content-Type", "application/json")
+	//username, password, ok := r.BasicAuth()
+	//
+	//if !ok {
+	//	w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	w.Write([]byte(`{"message": "No basic auth present"}`))
+	//	return
+	//}
+	//
+	//if !isAuthorised(username, password) {
+	//	w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	w.Write([]byte(`{"message": "Invalid username or password"}`))
+	//	return
+	//}
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Println("Endpoint Hit: returnAllArticles")
@@ -153,6 +160,9 @@ func deleteArticle(w http.ResponseWriter, r *http.Request) {
 	// wish to delete
 	id := vars["id"]
 
+	var notFound bool
+	notFound = true
+
 	// we then need to loop through all our articles
 	for index, article := range Articles {
 		// if our id path parameter matches one of our
@@ -160,10 +170,15 @@ func deleteArticle(w http.ResponseWriter, r *http.Request) {
 		if article.Id == id {
 			// updates our Articles array to remove the
 			// article
+			notFound = false
 			Articles = append(Articles[:index], Articles[index+1:]...)
 		}
 	}
 
+	if notFound == true {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	fmt.Println(w, "DELETE Endpoint Hit")
 }
 
@@ -171,6 +186,9 @@ func updateArticles(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
+
+	var notFound bool
+	notFound = true
 
 	reqbody, _ := ioutil.ReadAll(r.Body)
 	var article Article
@@ -180,26 +198,36 @@ func updateArticles(w http.ResponseWriter, r *http.Request) {
 		// if our id path parameter matches one of our articles
 
 		if art.Id == id {
+			notFound = false
 			// updates our Articles array to remove the article
 			Articles[index] = article
 		}
 	}
 
-	err := json.NewEncoder(w).Encode(article)
+	if notFound == true {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
+	err := json.NewEncoder(w).Encode(article)
 	if err != nil {
 		log.Println(err)
 	}
 	fmt.Println(w, "UPDATE Endpoint Hit")
 }
 
+func handleUnknownRequests(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+}
+
 func handleRequests() {
-	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/article/{id}", returnSingleArticle).Methods("Get")
-	myRouter.HandleFunc("/articles", returnAllArticles).Methods("Get")
-	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
-	myRouter.HandleFunc("/article/{id}", updateArticles).Methods("PUT")
-	myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
+	MyRouter.HandleFunc("/", homePage)
+	MyRouter.HandleFunc("/article/{id}", returnSingleArticle).Methods("Get")
+	MyRouter.HandleFunc("/articles", returnAllArticles).Methods("Get")
+	MyRouter.HandleFunc("/article", createNewArticle).Methods("POST")
+	MyRouter.HandleFunc("/article/{id}", updateArticles).Methods("PUT")
+	MyRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
+	MyRouter.PathPrefix("/").HandlerFunc(handleUnknownRequests)
 }
 
 func GracefulShutDown() {
