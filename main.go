@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "my-api/cmd"
+import "github.com/piyush1146115/Go-REST-API-with-CLI/cmd"
 
 func main() {
 	cmd.Execute()

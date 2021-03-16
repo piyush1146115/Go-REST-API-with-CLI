@@ -17,11 +17,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+
 	"github.com/piyush1146115/Go-REST-API-with-CLI/api"
+	"github.com/spf13/cobra"
 )
 
 var port string
+
 // startServerCmd represents the startServer command
 var startServerCmd = &cobra.Command{
 	Use:   "startServer",
@@ -34,11 +36,11 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("startServer called")
+		api.CreateServer()
+		api.SetValue(port)
 
 	},
 }
-
-
 
 func init() {
 	rootCmd.AddCommand(startServerCmd)

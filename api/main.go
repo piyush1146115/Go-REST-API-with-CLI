@@ -2,23 +2,25 @@ package api
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
-var Router = mux.NewRouter()
+var myRouter = mux.NewRouter().StrictSlash(true)
 var wait time.Duration
 var server *http.Server
 
-type Article struct{
-	Id string `json: "Id"`
-	Title string `json:"Title"`
-	Desc string `json:"desc"`
+type Article struct {
+	Id      string `json: "Id"`
+	Title   string `json:"Title"`
+	Desc    string `json:"desc"`
 	Content string `json:"content"`
 }
 
@@ -32,19 +34,40 @@ func CreateDB() {
 	}
 }
 
-func homePage(w http.ResponseWriter, r *http.Request){
+func CreateServer() {
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "The duration for which our server gracefully wait for existing connections to finish")
+	flag.Parse()
+
+	server = &http.Server{
+		Addr:         "10000",
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      myRouter,
+	}
+}
+
+func SetValue(P string) {
+	server.Addr = ":" + P
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+	GracefulShutDown()
+}
+
+func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to the Homepage!")
 	fmt.Println(w, "Homepage Endpoint Hit")
 }
 
-func handleRequests(){
-	myRouter := mux.NewRouter().StrictSlash(true)
+func handleRequests() {
 	myRouter.HandleFunc("/", homePage)
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
-	GracefulShutDown()
 }
 
-func GracefulShutDown(){
+func GracefulShutDown() {
 	c := make(chan os.Signal, 1)
 
 	signal.Notify(c, os.Interrupt)
@@ -54,11 +77,11 @@ func GracefulShutDown(){
 	defer cancel()
 
 	server.Shutdown(ctx)
-	log.Println("shutting down")
+	log.Println("Shutting down!!")
 	os.Exit(0)
 }
 
-func init(){
+func init() {
 	CreateDB()
 	handleRequests()
 }
