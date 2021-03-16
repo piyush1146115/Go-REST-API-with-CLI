@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -25,6 +27,20 @@ type Article struct {
 }
 
 var Articles []Article
+
+var users = map[string]string{
+	"test":  "secret",
+	"user1": "password1",
+	"user2": "password2",
+}
+
+func isAuthorised(username, password string) bool {
+	pass, ok := users[username]
+	if !ok {
+		return false
+	}
+	return password == pass
+}
 
 func CreateDB() {
 	Articles = []Article{
@@ -63,8 +79,127 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(w, "Homepage Endpoint Hit")
 }
 
+func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["id"]
+
+	// Loop over all of our Articles
+	// if the article.Id equals the key we pass in
+	// return the article encoded as JSON
+	for _, article := range Articles {
+		if article.Id == key {
+			err := json.NewEncoder(w).Encode(article)
+
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+	}
+	fmt.Println("Return single article Endpoint hit!")
+}
+
+func returnAllArticles(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	username, password, ok := r.BasicAuth()
+
+	if !ok {
+		w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"message": "No basic auth present"}`))
+		return
+	}
+
+	if !isAuthorised(username, password) {
+		w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"message": "Invalid username or password"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Println("Endpoint Hit: returnAllArticles")
+	err := json.NewEncoder(w).Encode(Articles)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	fmt.Println("Get all articles endpoint hit!")
+}
+
+func createNewArticle(w http.ResponseWriter, r *http.Request) {
+	// get the body of our POST request
+	// return the string response containing the request body
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	var article Article
+	json.Unmarshal(reqBody, &article)
+	// update our global Articles array to include
+	// our new Article
+	Articles = append(Articles, article)
+
+	err := json.NewEncoder(w).Encode(article)
+
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println("Create Endpoint Hit")
+}
+
+func deleteArticle(w http.ResponseWriter, r *http.Request) {
+	// once again, we will need to parse the path parameters
+	vars := mux.Vars(r)
+	// we will need to extract the `id` of the article we
+	// wish to delete
+	id := vars["id"]
+
+	// we then need to loop through all our articles
+	for index, article := range Articles {
+		// if our id path parameter matches one of our
+		// articles
+		if article.Id == id {
+			// updates our Articles array to remove the
+			// article
+			Articles = append(Articles[:index], Articles[index+1:]...)
+		}
+	}
+
+	fmt.Println(w, "DELETE Endpoint Hit")
+}
+
+func updateArticles(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	reqbody, _ := ioutil.ReadAll(r.Body)
+	var article Article
+	json.Unmarshal(reqbody, &article)
+
+	for index, art := range Articles {
+		// if our id path parameter matches one of our articles
+
+		if art.Id == id {
+			// updates our Articles array to remove the article
+			Articles[index] = article
+		}
+	}
+
+	err := json.NewEncoder(w).Encode(article)
+
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(w, "UPDATE Endpoint Hit")
+}
+
 func handleRequests() {
 	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/article/{id}", returnSingleArticle).Methods("Get")
+	myRouter.HandleFunc("/articles", returnAllArticles).Methods("Get")
+	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
+	myRouter.HandleFunc("/article/{id}", updateArticles).Methods("PUT")
+	myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
 }
 
 func GracefulShutDown() {
