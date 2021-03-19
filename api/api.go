@@ -50,12 +50,14 @@ func CreateDB() {
 	}
 }
 
-func CreateServer() {
+func CreateServer(port string) {
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "The duration for which our server gracefully wait for existing connections to finish")
 	flag.Parse()
+	//fmt.Println(port)
+	port = ":" + port
 
 	server = &http.Server{
-		Addr:         "10000",
+		Addr:         port,
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
@@ -63,9 +65,8 @@ func CreateServer() {
 	}
 }
 
-func SetValue(P string) {
-	server.Addr = ":" + P
-
+func StartServer() {
+	//fmt.Println("From startserver " + server.Addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			log.Println(err)
