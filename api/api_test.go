@@ -88,6 +88,45 @@ func TestCreateArticles(t *testing.T) {
 	processRequest(t, requests)
 }
 
+func TestDeleteArticle(t *testing.T) {
+
+	requests := make([]Request, 2)
+
+	requests[0] = Request{
+		"DELETE",
+		"http://localhost:10000/article/2",
+		nil,
+		200,
+	}
+
+	requests[1] = Request{
+		"DELETE",
+		"http://localhost:10000/article/2",
+		nil,
+		404,
+	}
+
+	processRequest(t, requests)
+}
+
+func TestUpdateArticle(t *testing.T) {
+	requests := make([]Request, 2)
+	requests[0] = Request{
+		"PUT",
+		"http://localhost:10000/article/3",
+		strings.NewReader(`{"Id":"3","Title":"Test title","desc":"Test Description","content":"Hello World"}`),
+		200,
+	}
+
+	requests[1] = Request{
+		"PUT",
+		"http://localhost:10000/article/5",
+		strings.NewReader(`{"Id":"1","Title":"Test title","desc":"Test Description","content":"Hello World"}`),
+		404,
+	}
+	processRequest(t, requests)
+}
+
 func processRequest(t *testing.T, reqs []Request) {
 	for _, req := range reqs {
 		r, _ := http.NewRequest(req.Method, req.URL, req.Body)
