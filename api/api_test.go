@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cast"
@@ -48,7 +49,7 @@ func TestGetArticle(t *testing.T) {
 	processRequest(t, requests)
 }
 
-func TestGetArticles(t *testing.T) {
+func TestGetAllArticles(t *testing.T) {
 	requests := make([]Request, 2)
 
 	requests[0] = Request{
@@ -62,6 +63,26 @@ func TestGetArticles(t *testing.T) {
 		"http://localhost:10000/article",
 		nil,
 		404,
+	}
+
+	processRequest(t, requests)
+}
+
+func TestCreateArticles(t *testing.T) {
+	requests := make([]Request, 2)
+
+	requests[0] = Request{
+		"POST",
+		"http://localhost:10000/articles",
+		strings.NewReader(`{"Id":"1","Title":"Test title","desc":"Test Description","content":"Hello World"}`),
+		404,
+	}
+
+	requests[1] = Request{
+		"POST",
+		"http://localhost:10000/article",
+		strings.NewReader(`{"Id":"1","Title":"Test title","desc":"Test Description","content":"Hello World"}`),
+		200,
 	}
 
 	processRequest(t, requests)
