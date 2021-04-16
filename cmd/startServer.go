@@ -28,12 +28,7 @@ var port string
 var startServerCmd = &cobra.Command{
 	Use:   "startServer",
 	Short: "This will start my server",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long:  `This will start an REST API server that can serve some CRUD request and take port number as a flag to run on a specified port`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("startServer called")
 		api.CreateServer(port)
