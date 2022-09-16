@@ -29,13 +29,14 @@ $ docker run -p 8080:8080 <given_image_name> # to start the server with default 
 ## Data Model
 
 - User Model
-``````
+```
 type Article struct {
 	Id      string `json: "Id"`
 	Title   string `json:"Title"`
 	Desc    string `json:"desc"`
 	Content string `json:"content"`
 }
+```
 
 
 ## Available API Endpoints
