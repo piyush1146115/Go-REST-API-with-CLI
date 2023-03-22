@@ -39,13 +39,4 @@ var startServerCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(startServerCmd)
 	startServerCmd.PersistentFlags().StringVarP(&port, "port", "p", "10000", "This flag will set the post")
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// startServerCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// startServerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
