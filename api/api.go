@@ -20,8 +20,8 @@ var wait time.Duration
 var server *http.Server
 
 type Article struct {
-	Id      string `json: "Id"`
-	Title   string `json:"Title"`
+	Id      string `json: "id"`
+	Title   string `json:"title"`
 	Desc    string `json:"desc"`
 	Content string `json:"content"`
 }
